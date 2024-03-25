@@ -1,36 +1,41 @@
 import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import * as THREE from "three"; // Import THREE
 
 import islandScene from "../assets/scene.gltf";
 
 import { a } from "@react-spring/three";
+
 const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
   const islandRef = useRef();
-  const { gl, viewport } = useThree();
+  const watermillRef = useRef();
+  const { gl, viewport, camera } = useThree();
   const { nodes, materials } = useGLTF(islandScene);
 
   const lastX = useRef(0);
-  const lastY = useRef(0); // Add a reference for the last Y position
-  const rotationSpeedX = useRef(0); // Add a reference for the rotation speed around the x-axis
+  const lastY = useRef(0);
+  const rotationSpeedX = useRef(0);
   const rotationSpeedY = useRef(0);
   const zoomSpeed = useRef(0);
   const dampingFactor = 0.95;
+  const maxCameraPosition = new THREE.Vector3(5, 5, 5);
+  const minCameraPosition = new THREE.Vector3(-5, -5, -5);
 
   const handlePointerDown = (e) => {
     e.stopPropagation();
     e.preventDefault();
     setIsRotating(true);
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY; // Get the Y coordinate
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     lastX.current = clientX;
-    lastY.current = clientY; // Store the Y coordinate
+    lastY.current = clientY;
   };
 
   const handlePointerUp = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    setIsRotating(false); // Set isRotating to false when the pointer is released
+    setIsRotating(false);
   };
 
   const handlePointerMove = (e) => {
@@ -38,21 +43,21 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
     e.preventDefault();
     if (isRotating) {
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY; // Get the Y coordinate
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       const deltaX = (clientX - lastX.current) / viewport.width;
-      const deltaY = (clientY - lastY.current) / viewport.height; // Calculate the Y delta
+      const deltaY = (clientY - lastY.current) / viewport.height;
       islandRef.current.rotation.y += deltaX * 0.01 * Math.PI;
-      islandRef.current.rotation.x += deltaY * 0.01 * Math.PI; // Rotate around the x-axis
+      islandRef.current.rotation.x += deltaY * 0.01 * Math.PI;
       lastX.current = clientX;
-      lastY.current = clientY; // Update the last Y position
+      lastY.current = clientY;
       rotationSpeedY.current = deltaX * 0.01 * Math.PI;
-      rotationSpeedX.current = deltaY * 0.01 * Math.PI; // Store the rotation speed around the x-axis
+      rotationSpeedX.current = deltaY * 0.01 * Math.PI;
     }
   };
 
   const handleWheel = (e) => {
     e.preventDefault();
-    islandRef.current.position.y += e.deltaY * 0.01;
+    zoomSpeed.current = e.deltaY * 0.001;
   };
 
   const handleKeyDown = (e) => {
@@ -74,15 +79,14 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
   useFrame(() => {
     if (!isRotating) {
       rotationSpeedY.current *= dampingFactor;
-      rotationSpeedX.current *= dampingFactor; // Apply damping to the x-axis rotation speed
+      rotationSpeedX.current *= dampingFactor;
       if (Math.abs(rotationSpeedY.current) < 0.0001) rotationSpeedY.current = 0;
-      if (Math.abs(rotationSpeedX.current) < 0.0001) rotationSpeedX.current = 0; // Stop x-axis rotation when the speed is negligible
+      if (Math.abs(rotationSpeedX.current) < 0.0001) rotationSpeedX.current = 0;
     } else {
       const rotation = islandRef.current.rotation.y;
       const normalizedRotation =
         ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
-      // Set the current stage based on the island's orientation
       switch (true) {
         case normalizedRotation >= 5.45 && normalizedRotation <= 5.85:
           setCurrentStage(4);
@@ -100,6 +104,32 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
           setCurrentStage(null);
       }
     }
+
+    // Zoom in and out of the watermill mesh
+    const watermillPosition = watermillRef.current.getWorldPosition(
+      new THREE.Vector3()
+    );
+    camera.lookAt(watermillPosition);
+    camera.updateProjectionMatrix();
+
+    const zoomFactor = 1 + zoomSpeed.current;
+    camera.position.lerp(watermillPosition, 1 - Math.pow(zoomFactor, 0.1));
+
+    // Clamp the camera position within the bounding box
+    camera.position.x = Math.max(
+      Math.min(camera.position.x, maxCameraPosition.x),
+      minCameraPosition.x
+    );
+    camera.position.y = Math.max(
+      Math.min(camera.position.y, maxCameraPosition.y),
+      minCameraPosition.y
+    );
+    camera.position.z = Math.max(
+      Math.min(camera.position.z, maxCameraPosition.z),
+      minCameraPosition.z
+    );
+
+    zoomSpeed.current *= dampingFactor;
   });
 
   useEffect(() => {
@@ -107,7 +137,7 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
     canvas.addEventListener("pointerdown", handlePointerDown);
     canvas.addEventListener("pointerup", handlePointerUp);
     canvas.addEventListener("pointermove", handlePointerMove);
-    canvas.addEventListener("wheel", handleWheel); // Change this line
+    canvas.addEventListener("wheel", handleWheel);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
 
@@ -115,7 +145,7 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
       canvas.removeEventListener("pointerdown", handlePointerDown);
       canvas.removeEventListener("pointerup", handlePointerUp);
       canvas.removeEventListener("pointermove", handlePointerMove);
-      canvas.removeEventListener("wheel", handleWheel); // Change this line
+      canvas.removeEventListener("wheel", handleWheel);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
@@ -152,6 +182,7 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
             scale={100}
           />
           <mesh
+            ref={watermillRef}
             geometry={nodes.characters002_watermill_0.geometry}
             material={materials.watermill}
             rotation={[0, 0, -Math.PI / 2]}
