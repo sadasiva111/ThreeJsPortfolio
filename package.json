@@ -13,9 +13,12 @@
     "@react-spring/three": "^9.7.3",
     "@react-three/drei": "^9.102.6",
     "@react-three/fiber": "^8.15.19",
+    "framer-motion": "^11.0.20",
+    "ore-three": "^5.0.0-beta1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.3"
+    "react-router-dom": "^6.22.3",
+    "wolfy87-eventemitter": "^5.2.9"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",

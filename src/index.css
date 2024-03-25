@@ -77,6 +77,9 @@ body:has(.card[data-color="green"]:hover) {
   .cta-text {
     @apply text-black-500 font-extrabold flex-1 text-3xl max-md:text-center;
   }
+  .re-use {
+    @apply w-20 h-10 rounded-lg bg-white items-center justify-center flex shadow-md font-bold
+  }
 }
 
 .glassmorphism {

@@ -9,11 +9,12 @@ const Navbar = () => {
       >
         <p className="blue-gradient_text">SADA</p>
       </NavLink>
-      <nav className="flex text-lg gap-7 font-medium">
+
+      <nav className="flex text-lg gap-7 font-medium ">
         <NavLink
           to="/about"
           className={({ isActive }) =>
-            isActive ? "blue-gradient_text" : "text-black"
+            isActive ? "blue-gradient_text re-use" : "text-black re-use"
           }
         >
           About
@@ -21,7 +22,7 @@ const Navbar = () => {
         <NavLink
           to="/projects"
           className={({ isActive }) =>
-            isActive ? "blue-gradient_text" : "text-black"
+            isActive ? "blue-gradient_text re-use" : "text-black re-use"
           }
         >
           Projects
@@ -29,7 +30,7 @@ const Navbar = () => {
         <NavLink
           to="/contact"
           className={({ isActive }) =>
-            isActive ? "blue-gradient_text" : "text-black"
+            isActive ? "blue-gradient_text re-use" : "text-black re-use"
           }
         >
           Contact
