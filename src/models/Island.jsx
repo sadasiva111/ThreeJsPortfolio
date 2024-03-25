@@ -11,7 +11,9 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
   const { nodes, materials } = useGLTF(islandScene);
 
   const lastX = useRef(0);
-  const rotationSpeed = useRef(0);
+  const lastY = useRef(0); // Add a reference for the last Y position
+  const rotationSpeedX = useRef(0); // Add a reference for the rotation speed around the x-axis
+  const rotationSpeedY = useRef(0);
   const zoomSpeed = useRef(0);
   const dampingFactor = 0.95;
 
@@ -20,7 +22,9 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
     e.preventDefault();
     setIsRotating(true);
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY; // Get the Y coordinate
     lastX.current = clientX;
+    lastY.current = clientY; // Store the Y coordinate
   };
 
   const handlePointerUp = (e) => {
@@ -34,10 +38,15 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
     e.preventDefault();
     if (isRotating) {
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const delta = (clientX - lastX.current) / viewport.width;
-      islandRef.current.rotation.y += delta * 0.01 * Math.PI;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY; // Get the Y coordinate
+      const deltaX = (clientX - lastX.current) / viewport.width;
+      const deltaY = (clientY - lastY.current) / viewport.height; // Calculate the Y delta
+      islandRef.current.rotation.y += deltaX * 0.01 * Math.PI;
+      islandRef.current.rotation.x += deltaY * 0.01 * Math.PI; // Rotate around the x-axis
       lastX.current = clientX;
-      rotationSpeed.current = delta * 0.01 * Math.PI;
+      lastY.current = clientY; // Update the last Y position
+      rotationSpeedY.current = deltaX * 0.01 * Math.PI;
+      rotationSpeedX.current = deltaY * 0.01 * Math.PI; // Store the rotation speed around the x-axis
     }
   };
 
@@ -64,11 +73,12 @@ const Island = ({ isRotating, setIsRotating, setCurrentStage, ...props }) => {
 
   useFrame(() => {
     if (!isRotating) {
-      rotationSpeed.current *= dampingFactor;
-      if (Math.abs(rotationSpeed.current) < 0.0001) rotationSpeed.current = 0;
+      rotationSpeedY.current *= dampingFactor;
+      rotationSpeedX.current *= dampingFactor; // Apply damping to the x-axis rotation speed
+      if (Math.abs(rotationSpeedY.current) < 0.0001) rotationSpeedY.current = 0;
+      if (Math.abs(rotationSpeedX.current) < 0.0001) rotationSpeedX.current = 0; // Stop x-axis rotation when the speed is negligible
     } else {
       const rotation = islandRef.current.rotation.y;
-
       const normalizedRotation =
         ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
